@@ -1,8 +1,13 @@
 #ifndef ZZF_CONSTRUCT_H_
 #define ZZF_CONSTRUCT_H_
-//暂未进行使用
+
+//construct destroy
+
 #include<new.h>
 #include <new>
+
+namespace zzf_stl{
+
 template <class T>
 void construct(T* ptr)
 {
@@ -14,9 +19,15 @@ inline void construct(T1 *p,const T2& val){
     ::new((void*)p) T1(val);
 }
 
+template <typename T, class... Args>
+void construct(T* ptr, Args&&... args)
+{
+  ::new ((void*)ptr) T(mystl::forward<Args>(args)...);
+}
+
 template <typename T>
 inline void destroy(T *p){
-    p -> ~Y();
+    p -> ~T();
 }
 
 template <typename ForwardIter>
@@ -40,6 +51,6 @@ inline void __destroy_aux(ForwardIter first, ForwardIter last, std::false_type){
 template <typename ForwardIter>
 inline void __destroy_aux(ForwardIter first, ForwardIter last, std::true_type){}
 
-
+}
 #endif
 
