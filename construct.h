@@ -5,6 +5,8 @@
 
 #include<new.h>
 #include <new>
+#include <type_traits>
+
 
 namespace zzf_stl{
 
@@ -19,11 +21,12 @@ inline void construct(T1 *p,const T2& val){
     ::new((void*)p) T1(val);
 }
 
+/*
 template <typename T, class... Args>
 void construct(T* ptr, Args&&... args)
 {
-  ::new ((void*)ptr) T(mystl::forward<Args>(args)...);
-}
+  ::new ((void*)ptr) T(zzf_stl::forward<Args>(args)...);
+}*/
 
 template <typename T>
 inline void destroy(T *p){
@@ -32,14 +35,23 @@ inline void destroy(T *p){
 
 template <typename ForwardIter>
 inline void destroy(ForwardIter first, ForwardIter last){
+    for (; first != last; ++first)
+        destroy(&*first);
+}
+
+//后续写了iter再补上
+/*
+template <typename ForwardIter>
+inline void destroy(ForwardIter first, ForwardIter last){
     __destroy(first, last, value_type(first));
 }
 
 //判断元素的数值型别是否有trivial destructor
 template <typename ForwardIter, typename T>
 inline void __destroy(ForwardIter first, ForwardIter last, T*){
-    typedef typename __type_traits<T>::has_trivial_destructor trivial_destructor;
-    __destroy_aux(first, last, trivial_destructor());
+    //typedef typename __type_traits<T>::has_trivial_destructor trivial_destructor;
+    __destroy_aux(first, last, std::is_trivially_destructible<
+              typename iterator_traits<ForwardIter>::value_type>{});
 }
 
 template <typename ForwardIter>
@@ -50,7 +62,7 @@ inline void __destroy_aux(ForwardIter first, ForwardIter last, std::false_type){
 
 template <typename ForwardIter>
 inline void __destroy_aux(ForwardIter first, ForwardIter last, std::true_type){}
-
+*/
 }
 #endif
 

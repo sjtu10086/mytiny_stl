@@ -36,11 +36,11 @@ public:
 
     static void construct(T* ptr) {zzf_stl::construct(ptr);}
     static void construct(T* ptr, const T& value) {zzf_stl::construct(ptr, value);}
-    static void construct(T* ptr, T&& value) {zzf_stl::construct(ptr, move(value));}
-
+    static void construct(T* ptr, T&& value) {zzf_stl::construct(ptr, std::move(value));}
+/*
     template <class... Args>
     static void construct(T* ptr, Args&& ...args) {zzf_stl::construct(ptr, mystl::forward<Args>(args)...);}
-
+*/
     static void destroy(T* ptr) {zzf_stl::destroy(ptr);}
     static void destroy(T* first, T* last) {zzf_stl::destroy(first, last);}
 };
