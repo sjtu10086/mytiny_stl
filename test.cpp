@@ -4,9 +4,10 @@
 #include<algorithm>
 #include<functional>
 #include<iostream>
-
+#include<cstdio>
 using namespace std;
 int main(){
+/*
     int ia[5] = {0, 1, 2, 3, 4};
     unsigned int i;
     set<int> s;
@@ -14,5 +15,7 @@ int main(){
     for (i = 0; i < 10000; i++)
         iv.push_back(ia[i % 5]);
     return 0;
+    */
+    printf("%x\n", 1987511984);
 }
 
