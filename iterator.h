@@ -134,6 +134,13 @@ namespace zzf_stl
     {
         advance_dispatch(i, n, iterator_category(i));
     }
+
+    template <class Iterator>
+    typename iterator_traits<Iterator>::value_type*
+    value_type(const Iterator&)
+    {
+    return static_cast<typename iterator_traits<Iterator>::value_type*>(0);
+    }
 } // namespace zzf_stl
 
 

@@ -31,6 +31,7 @@ int main(){
     auto pos = li.find(li.begin(), li.end(), 2);
     //li.transfer(pos, iter1, iter2);
     li.void_test_out();
+    //uninitialized_fill_n(result, n, x);
     return 0;
     
     //printf("%x\n", 1987511984);
