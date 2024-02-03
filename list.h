@@ -1,6 +1,7 @@
 #ifndef ZZF_LIST_H_
 #define ZZF_LIST_H_
 
+#include <iostream>
 #include "iterator.h"
 #include "alloc.h"
 //未区分头节点与普通节点
@@ -8,8 +9,10 @@ namespace zzf_stl
 {
     template <class T>
     struct __list_node{
-        typedef __list_node<T>* prev;
-        typedef __list_node<T>* next;
+        __list_node<T>* prev;
+        __list_node<T>* next;
+        //void* prev;
+        //void* next;
         T data;
     };
 
@@ -46,23 +49,27 @@ namespace zzf_stl
         //标准做法
         pointer   operator->() const { return &(operator*());}
 
+        operator link_type(){
+            return node;
+        }
+
         self& operator ++(){
-            node = ((*node).next);
+            node = (*node).next;
             return *this;
         }
 
-        self& operator ++(int){
+        self operator ++(int){
             auto temp = *this;
             ++(*this);
             return temp;
         }
 
         self& operator --(){
-            node = ((*node).prev);
+            node = (*node).prev;
             return *this;
         }
 
-        self& operator --(int){
+        self operator --(int){
             auto temp = *this;
             --(*this);
             return temp;
@@ -127,25 +134,20 @@ namespace zzf_stl
     };
     */
 
-    template <class T, class Alloc = zzf_stl::simple_alloc<T, zzf_stl::default_alloc>>
+    template <class T, class Alloc = zzf_stl::default_alloc>
     class list{
     protected:
         typedef __list_node<T> list_node;
     public:
         typedef list_node* link_type;
         //typedef Alloc                      allocator_type;
-        //typedef Alloc                      data_allocator;
-        typedef Alloc                      list_node_allocator;
-
-        typedef typename allocator_type::value_type      value_type;
-        typedef typename allocator_type::pointer         pointer;
-        typedef typename allocator_type::const_pointer   const_pointer;
-        typedef typename allocator_type::reference       reference;
-        typedef typename allocator_type::const_reference const_reference;
-        typedef typename allocator_type::size_type       size_type;
-        typedef typename allocator_type::difference_type difference_type;
+        typedef zzf_stl::simple_alloc<T, Alloc>          data_allocator;
+        typedef zzf_stl::simple_alloc<list_node, Alloc>  list_node_allocator;
 
         typedef list_iterator<T>                         iterator;
+        typedef typename iterator::size_type     size_type;
+        typedef typename iterator::reference     reference;
+
         //typedef list_const_iterator<T>                   const_iterator;
 
     protected:
@@ -161,16 +163,16 @@ namespace zzf_stl
         reference bank() {return *(--end());}
 
         //构造与内存管理
-    private:
+    protected:
         link_type get_node() {return list_node_allocator::allocate();}
         void put_node(link_type p) {list_node_allocator::deallocate(p);}
         link_type create_node(const T&x){
             link_type p = get_node();
-            list_node_allocator::construct(&p -> data, x);
+            data_allocator::construct(&p -> data, x);
             return p;
         }
         void destroy_node(link_type p){
-            list_node_allocator::destroy(&p -> data);
+            data_allocator::destroy(&p -> data);
             put_node(p);
         }
         void empty_initialize(){
@@ -190,12 +192,22 @@ namespace zzf_stl
 
         void pop_back() {iterator tmp = end(); erase(--tmp);}
 
+        iterator find(iterator first, iterator last, const T& x){
+            iterator tmp = first;
+            while(tmp != last){
+                if (*tmp == x)
+                    return tmp;
+                ++tmp;
+            }
+            return tmp;
+        }
+
         iterator insert(iterator pos, const T& x){//插入模式为：原节点位于新节点后方
             link_type tmp;
             tmp = create_node(x);
             tmp -> next = pos.node;
             tmp -> prev = pos.node -> prev;
-            (pos.node -> prev) -> next = tmp;
+            pos.node -> prev -> next = tmp;
             pos.node -> prev = tmp;
             return tmp;
         }
@@ -209,10 +221,106 @@ namespace zzf_stl
             return iterator(next_node);
         }
 
+        void clear(){
+            link_type cur = node -> next;
+            while(cur != node){
+                link_type tmp = cur;
+                cur = cur -> next;
+                destroy_node(tmp);
+            }
+            node -> next = node;
+            node -> prev = node;
+        }
         
-        
+        void remove(const T& val){
+            iterator first = begin();
+            iterator last = end();
+            while(first != last){
+                auto next = first;
+                ++next;
+                if (*first == val)
+                    erase(first);
+                first = next;
+            }
+        }
+
+        void unique(){
+            iterator first = begin();
+            iterator last = end();
+            if (first == last)
+                return;
+            auto next = first;
+            while(++next != last){
+                if (*first == *next)
+                    erase(next);
+                else    
+                    first = next;
+                next = first;
+            }
+        }
+
+        void splice(iterator pos, list &x){
+            if (!x.empty())
+                transfer(pos, x.begin(), x.end());
+        }
+
+        void splice(iterator pos, list&, iterator i){
+            auto j = i;
+            ++j;
+            if(pos == i || pos == j)
+                return;
+            transfer(pos, i, j);
+        }
+
+        void splice(iterator pos, list&, iterator first, iterator last){
+            if (first != last)
+                transfer(pos, first, last);
+        }
+
+        void reverse(){
+            if (node -> next == node || node -> next -> next == node)
+                return;
+            auto first = begin();
+            ++first;
+            while(first != end()){
+                iterator old = first;
+                ++first;
+                transfer(begin(), old, first);
+            }
+        }
+        //暂未实现，等我看完排序
+        void sort();
+        void merge();
+    protected://内部调用函数
+        //将[first, last)中的所有元素移动到pos之前
+        //测试完成
+        void transfer(iterator pos, iterator first, iterator last){
+            if (pos != last){
+                last.node -> prev -> next = pos.node;//C
+                first.node -> prev -> next = last.node;//A
+                pos.node -> prev -> next = first.node;//B
+                link_type tmp = pos.node->prev;
+                pos.node->prev = last.node->prev;
+                last.node->prev = first.node->prev;
+                first.node->prev = tmp;
+            }
+        }
+
+        //void swap(iterator lhs&, )
 
 
+
+
+    public://测试函数
+
+        void void_test_out(){
+            link_type cur = node -> next;
+            while(cur != node){
+                link_type tmp = cur;
+                cur = cur -> next;
+                std::cout << tmp->data << std::endl;
+            }
+        }
     };
 } // namespace zzf_stl
 
