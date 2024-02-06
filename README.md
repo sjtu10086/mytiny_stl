@@ -6,4 +6,6 @@
 #0202   list框架、部分功能函数（未测试）    
 #0203   list部分测试、部分函数          
 #0204   vector框架、部分功能函数（部分algobase部分函数未定义）  
-#0204   vector_insert、部分uninitialized函数
+#0204   vector_insert、部分uninitialized函数        
+#0205   早睡早起（      
+#0206   deque构造（差一点点

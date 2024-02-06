@@ -8,6 +8,7 @@
 namespace zzf_stl
 {
     //uninitialized_fill
+    /*
     template <class ForwardIterator, class T>
     inline void uninitialized_fill(ForwardIterator first, ForwardIterator last, const T& x){
         __uninitialized_fill(first, last, x, std::remove_reference_t<decltype(*first)>());
@@ -18,7 +19,7 @@ namespace zzf_stl
         typedef typename std::is_pod<T1>::value is_POD;
         __uninitialized_fill_aux(first, last, x, is_POD{});
     }
-
+*/
     template <class ForwardIterator, class T>
     inline void __uninitialized_fill_aux(ForwardIterator first, ForwardIterator last, const T& x, std::true_type){
         std::fill(first, last, x);
@@ -30,6 +31,13 @@ namespace zzf_stl
         for (; cur != last; ++cur){
             construct(&*cur, x);
         }
+    }
+
+    template <class ForwardIterator, class T>
+    inline void uninitialized_fill(ForwardIterator first, ForwardIterator last, const T& x){
+        __uninitialized_fill_aux(first, last, x, std::is_trivially_copy_assignable<
+                                                                typename iterator_traits<ForwardIterator>::
+                                                                value_type>{});
     }
 
 
