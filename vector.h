@@ -116,6 +116,17 @@ namespace zzf_stl
 
         void clear() {erase(begin(), end());}
 
+    public://测试函数
+
+        void void_test_out(){
+            iterator cur = begin();
+            while(cur != end()){
+                auto tmp = cur;
+                cur++;
+                std::cout << *tmp << std::endl;
+            }
+        }
+
     };
 
     template <typename T, typename Alloc>//此处不能给alloc默认值
@@ -138,7 +149,7 @@ namespace zzf_stl
                 ++new_finish;
                 new_finish = uninitialized_copy(pos, finish, new_finish);
             }
-            catch(){
+            catch(...){
                 destroy(new_start, new_finish);
                 data_allocator::deallocate(new_start, len);
                 throw;
@@ -164,14 +175,15 @@ namespace zzf_stl
                     uninitialized_copy(finish - n, finish, finish);
                     finish += n;
                     std::copy_backward(pos, old_finish - n, old_finish);
-                    fill(pos, pos + n, x_copy);
+                    std::fill(pos, pos + n, x_copy);
                 }
                 //x分为两块填充
                 else{
                     uninitialized_fill_n(finish, n - elems_after, x_copy);
                     finish += n - elems_after;
                     uninitialized_copy(pos, old_finish, finish);
-                    uninitialized_fill_n(pos, old_finish, x_copy);
+                    finish += elems_after;
+                    std::fill(pos, old_finish, x_copy);
                 }
             }
             else{
@@ -185,7 +197,7 @@ namespace zzf_stl
                     new_finish = uninitialized_fill_n(new_finish, n, x);
                     new_finish = uninitialized_copy(pos, finish, new_finish);
                 }
-                catch(){
+                catch(...){
                     destroy(new_start, new_finish);
                     data_allocator::deallocate(new_start, len);
                     throw;
@@ -199,6 +211,8 @@ namespace zzf_stl
             }
         }
     }
+
+    
 } // namespace zzf_stl
 
 #endif   

@@ -16,7 +16,7 @@ namespace zzf_stl
     template <class ForwardIterator, class T, class T1>
     inline void __uninitialized_fill(ForwardIterator first, ForwardIterator last, const T& x, T1*){
         typedef typename std::is_pod<T1>::value is_POD;
-        __uninitialized_fill_aux(first, last, x, is_POD);
+        __uninitialized_fill_aux(first, last, x, is_POD{});
     }
 
     template <class ForwardIterator, class T>
@@ -34,6 +34,7 @@ namespace zzf_stl
 
 
     //------------------uninitialized_fill_n-----------------------------------------------------------
+    /*
     template <class ForwardIterator, class Size, class T>
     inline ForwardIterator uninitialized_fill_n(ForwardIterator first, Size n, const T& x){
         return __uninitialized_fill_n(first, n, x, std::remove_reference_t<decltype(*first)>());
@@ -42,8 +43,8 @@ namespace zzf_stl
     template <class ForwardIterator, class Size, class T, class T1>
     inline ForwardIterator __uninitialized_fill_n(ForwardIterator first, Size n, const T& x, T1*){
         typedef typename std::is_pod<T1>::value is_POD;
-        return __uninitialized_fill_n_aux(first, n, x, is_POD);
-    }
+        return __uninitialized_fill_n_aux(first, n, x, is_POD{});
+    }*/
 
     template <class ForwardIterator, class Size, class T>
     inline ForwardIterator __uninitialized_fill_n_aux(ForwardIterator first, Size n, const T& x, std::true_type){
@@ -59,19 +60,14 @@ namespace zzf_stl
         return cur;
     }
 
+    template <class ForwardIterator, class Size, class T>
+    inline ForwardIterator uninitialized_fill_n(ForwardIterator first, Size n, const T& x){
+        return __uninitialized_fill_n_aux(first, n, x, std::is_trivially_copy_assignable<
+                                                                typename iterator_traits<ForwardIterator>::
+                                                                value_type>{});
+    }
 
     //---------------------uninitialized_copy--------------------------------------------------------
-    template <class InputIterator, class ForwardIterator>
-    inline ForwardIterator uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result){
-        return __uninitialized_copy(first, last, result, std::remove_reference_t<decltype(*result)>())
-    }
-
-    template <class InputIterator, class ForwardIterator, class T>
-    inline ForwardIterator __uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result, T*){
-        typedef typename std::is_pod<T1>::value is_POD;
-        return __uninitialized_copy_aux(first, last ,result, is_POD);
-    }
-
     template <class InputIterator, class ForwardIterator>
     inline ForwardIterator __uninitialized_copy_aux(InputIterator first, InputIterator last, ForwardIterator result, std::true_type){
         return std::copy(first, last, result);
@@ -84,6 +80,13 @@ namespace zzf_stl
             construct(&*cur, &*first);
         }
         return cur;
+    }
+    //不知道为什么仿造前面的做法有问题
+    template <class InputIterator, class ForwardIterator>
+    inline ForwardIterator uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result){
+        return __uninitialized_copy_aux(first, last, result, std::is_trivially_copy_assignable<
+                                                                typename iterator_traits<ForwardIterator>::
+                                                                value_type>{});
     }
 
     inline char* uninitialized_copy(const char* first, const char* last, char* result){
