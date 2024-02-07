@@ -13,10 +13,10 @@
 
 namespace zzf_stl
 {
-    template <class T, class Ref, class Ptr, size_t Bufsiz>//每个迭代器控制map上的一个buf？
+    template <class T, class Ref, class Ptr, size_t BufSiz>//每个迭代器控制map上的一个buf？
     struct __deque_iterator{    //未继承
-    typedef __deque_iterator<T, T&, T*, Bufsiz> iterator;
-    typedef __deque_iterator<T, const T&, const T*, Bufsiz> const_iterator;
+    typedef __deque_iterator<T, T&, T*, BufSiz> iterator;
+    typedef __deque_iterator<T, const T&, const T*, BufSiz> const_iterator;
 
     static size_t buffer_size() {return __deque_buf_size(BufSiz, sizeof(T));}
 
@@ -30,9 +30,9 @@ namespace zzf_stl
     typedef __deque_iterator self;
 
 
-    T* cur;
-    T* first;//first前有备用空间
-    T* last;//last后有备用空间，push时可以使用
+    T* cur;//尾后
+    T* first;
+    T* last;
     map_pointer node;//当前迭代器指向的buf，每个node对应一个buf
 
     void set_node(map_pointer new_node){
@@ -104,9 +104,9 @@ namespace zzf_stl
 
     bool operator== (const self& x) const {return cur == x.cur;}
     bool operator!= (const self& x) const {return !(*this == x);}
-    bool operator< (const self& x) const {return (node == x.node ? (cur < x,cur) : (node < x.node);)}
+    bool operator< (const self& x) const {return (node == x.node ? (cur < x.cur) : (node < x.node));}
 
-    inline size_t __deque_buf_size(size_t n, size_t sz){//Bufsiz为0时即默认使用512 bytes缓冲
+    inline static size_t __deque_buf_size(size_t n, size_t sz){//Bufsiz为0时即默认使用512 bytes缓冲
         return n != 0 ? n : (sz < 512 ? size_t(512 / sz) : 1);
     }
 
@@ -133,9 +133,11 @@ namespace zzf_stl
         size_type map_size;
 
     public:
+        deque() : start(), finish(), map(0), map_size(0) {fill_initialize(0, value_type());}
+        deque(int n, const value_type& val) : start(), finish(), map(0), map_size(0) {fill_initialize(n, val);}
         iterator begin() {return start;}
         iterator end() {return finish;}
-        reference operator[] (size_type n){return start[difference_type(n);]}
+        reference operator[] (size_type n){return start[difference_type(n)];}
         reference front() {return *start;}
         reference back() {  //后尝试改为 return *(finish - 1);
             iterator tmp = finish;
@@ -151,20 +153,41 @@ namespace zzf_stl
         typedef simple_alloc<value_type, Alloc> data_allocator;
         typedef simple_alloc<pointer, Alloc> map_allocator;
 
-        deque(int n, const value_type& val) : start(), finish(), map(0), map_size(0) {fill_initialize(n, val);}
-
         void fill_initialize(size_type n, const value_type& val);
         void create_map_and_nodes(size_type num_elements);
         void push_back_aux(const value_type& t);
         void push_front_aux(const value_type& t);
-        void reverse_map_at_back(size_type);
-        void reverse_map_at_front(size_type);
+        void pop_back_aux();
+        void pop_front_aux();
+        void reverse_map_at_back(size_type nodes_to_add = 1);
+        void reverse_map_at_front(size_type nodes_to_add = 1);
         void reallocate_map(size_type, bool);
+        size_type buffer_size() {return __deque_iterator<T, T&, T*, BufSiz>::buffer_size();}
     
     public:
         void push_back(const value_type& t);
         void push_front(const value_type& t);
+        void pop_back();
+        void pop_front();
+        void clear();
+        iterator erase(iterator);
+        iterator erase(iterator, iterator);
+        iterator insert(iterator, const T&);
+
+
+
+    public:
+        void void_test_out(){
+            iterator cur = begin();
+            while(cur != end()){
+                auto tmp = cur;
+                cur++;
+                std::cout << *tmp << std::endl;
+            }
+        }
     };
+
+//*************************init相关******************************************************************
 
     template <class T, class Alloc, size_t BufSiz>
     void deque<T, Alloc, BufSiz>::fill_initialize(size_type n, const value_type& val){
@@ -184,14 +207,14 @@ namespace zzf_stl
     void deque<T, Alloc, BufSiz>::create_map_and_nodes(size_type num_elements){
         //节点数 = 元素个数/缓冲区大小 + 1
         //刚好整除时多分配一个节点
-        size_type num_nodes = num_elements / __deque_iterator::buffer_size() + 1;
-        map_size = max(static_cast<size_type>(DEQUE_MAP_INIT_SIZE), num_nodes + 2);
+        size_type num_nodes = num_elements / buffer_size() + 1;
+        map_size = std::max(static_cast<size_type>(DEQUE_MAP_INIT_SIZE), num_nodes + 2);
         map = map_allocator::allocate(map_size);
         map_pointer nstart = map + (map_size - num_nodes) / 2;
         map_pointer nfinish = nstart + num_nodes - 1;
         map_pointer cur;
         try{
-            for (cur = nstart, cur <= nfinish; cur++){
+            for (cur = nstart; cur <= nfinish; cur++){
                 *cur = data_allocator::allocate(buffer_size());
             }
         }
@@ -203,6 +226,7 @@ namespace zzf_stl
         finish.cur = finish.first + num_elements % buffer_size();
     }
 
+//****************************************push相关******************************************************
     template <class T, class Alloc, size_t BufSiz>
     void deque<T, Alloc, BufSiz>::push_back(const value_type& t){
         if (finish.cur != finish.last - 1){
@@ -231,9 +255,9 @@ namespace zzf_stl
 
     template <class T, class Alloc, size_t BufSiz>
     void deque<T, Alloc, BufSiz>::push_front(const value_type& t){
-        if (start.cur != finish.first){
+        if (start.cur != start.first){
             construct(start.cur - 1, t);
-            --finish.cur;
+            --start.cur;
         }
         else{
             push_front_aux(t);
@@ -257,19 +281,57 @@ namespace zzf_stl
         }
     }
 
+//****************************************pop相关******************************************************
     template <class T, class Alloc, size_t BufSiz>
-    void deque<T, Alloc, BufSiz>::reverse_map_at_back(size_type nodes_to_add = 1){
+    void deque<T, Alloc, BufSiz>::pop_back(){
+        if (finish.cur != finish.first){//删除之后还有
+            --finish.cur;//cur是尾后指针
+            destroy(finish.cur);
+        }
+        else{
+            pop_back_aux();
+        }
+    }
+
+    template <class T, class Alloc, size_t BufSiz>
+    void deque<T, Alloc, BufSiz>::pop_back_aux(){
+        data_allocator::deallocate(finish.first);
+        finish.set_node(finish.node - 1);
+        finish.cur = finish.last - 1;
+        destroy(finish.cur);
+    }
+
+    template <class T, class Alloc, size_t BufSiz>
+    void deque<T, Alloc, BufSiz>::pop_front(){
+        if (start.cur != start.last - 1){
+            destroy(start.cur);
+            ++start.cur;
+        }
+        else{
+            pop_front_aux();
+        }
+    }
+
+    template <class T, class Alloc, size_t BufSiz>
+    void deque<T, Alloc, BufSiz>::pop_front_aux(){
+        destroy(start.cur);
+        data_allocator::deallocate(start.first);
+        start.set_node(start.node + 1);
+        start.cur = start.first;
+    }
+//***************************************reallocate*************************************************
+    template <class T, class Alloc, size_t BufSiz>
+    void deque<T, Alloc, BufSiz>::reverse_map_at_back(size_type nodes_to_add){
         if (nodes_to_add + 1 > map_size - (finish.node - map))
             reallocate_map(nodes_to_add, false);
     }
 
     template <class T, class Alloc, size_t BufSiz>
-    void deque<T, Alloc, BufSiz>::reverse_map_at_front(size_type nodes_to_add = 1){
+    void deque<T, Alloc, BufSiz>::reverse_map_at_front(size_type nodes_to_add){
         if (nodes_to_add > start.node - map)
             reallocate_map(nodes_to_add, true);
     }
 
-    //没写完，但是大脑停止运转了
     template <class T, class Alloc, size_t BufSiz>
     void deque<T, Alloc, BufSiz>::reallocate_map(size_type nodes_to_add, bool add_at_front){
         size_type old_num_nodes = finish.node - start.node + 1;
@@ -277,7 +339,128 @@ namespace zzf_stl
 
         map_pointer new_nstart;
         if (map_size > 2 * new_num_nodes){
+            new_nstart = map + (map_size - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
+            if (new_nstart < start.node)
+                std::copy(start.node, finish.node + 1, new_nstart);
+            else
+                std::copy_backward(start.node, finish.node + 1, new_nstart + old_num_nodes);
+        }
+        else{
+            size_type new_map_size = map_size + std::max(map_size, nodes_to_add) + 2;
+            map_pointer new_map = map_allocator::allocate(new_map_size);
+            new_nstart = new_map + (new_map_size - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
+            std::copy(start.node, finish.node + 1, new_nstart);
+            map_allocator::deallocate(map, map_size);
+            map = new_map;
+            map_size = new_map_size;
+        }
 
+        start.set_node(new_nstart);
+        finish.set_node(new_nstart + old_num_nodes - 1);
+    }
+
+//************************************其余一些功能函数********************************
+    template <class T, class Alloc, size_t BufSiz>
+    void deque<T, Alloc, BufSiz>::clear(){
+        //除头尾之外的缓冲区
+        for (map_pointer node = start.node + 1; node < finish.node; ++node){
+            destroy(*node, *node + buffer_size());
+            data_allocator::deallocate(*node, buffer_size());
+        }
+
+        if (start.node != finish.node){
+            destroy(start.cur, start.last);
+            destroy(finish.first, finish.cur);
+            data_allocator::deallocate(finish.first, buffer_size());
+        }
+        else{
+            destroy(start.cur, finish.cur);
+        }
+        finish = start;
+    }
+
+    template <class T, class Alloc, size_t BufSiz>
+    deque<T, Alloc, BufSiz>::iterator deque<T, Alloc, BufSiz>::erase(iterator pos){
+        iterator next = pos;
+        ++next;
+        difference_type index = pos - start;
+        if (index < (size() >> 1)){
+            std::copy_backward(start, pos, next);
+            pop_front();
+        }
+        else{
+            std::copy(next, finish, pos);
+            pop_back();
+        }
+        return start + index;
+    }
+
+    template <class T, class Alloc, size_t BufSiz>
+    deque<T, Alloc, BufSiz>::iterator deque<T, Alloc, BufSiz>::erase(iterator first, iterator last){
+        if (first == start && last == finish){
+            clear();
+            return finish;
+        }
+        else{
+            difference_type n = last - first;
+            difference_type elements_before = first - start;
+            if (elements_before < (size() - n) / 2){
+                std::copy_backward(start, first, last);
+                iterator new_start = start + n;
+                destroy(start, new_start);
+                for (map_pointer cur = start.node; cur < new_start.node; ++cur)
+                    data_allocator::deallocate(*cur, buffer_size());//deallocate以buffer为单位
+                start = new_start;
+            }
+            else{
+                std::copy(last, finish, first);
+                iterator new_finish = finish - n;
+                destroy(new_finish, finish);
+                for (map_pointer cur = new_finish.node + 1; cur <= finish.node; ++cur)
+                    data_allocator::deallocate(*cur, buffer_size());
+                finish = new_finish;
+            }
+            return start + elements_before;
+        }
+    }
+
+    template <class T, class Alloc, size_t BufSiz>
+    deque<T, Alloc, BufSiz>::iterator deque<T, Alloc, BufSiz>::insert(iterator pos, const T& x){
+        if (pos.cur == start.cur){
+            push_front(x);
+            return start;
+        }
+        else if(pos.cur == finish.cur){
+            push_back(x);
+            iterator tmp = finish;
+            --tmp;
+            return tmp;
+        }
+        else{
+            difference_type index = pos - start;
+            value_type x_copy = x;
+            if (index < size() / 2){
+                push_front(front());
+                iterator front1 = start;
+                ++front1;
+                iterator front2 = front1;
+                ++front2;
+                pos = start + index;
+                iterator pos1 = pos;
+                ++pos1;
+                std::copy(front2, pos1, front1);
+            }
+            else{
+                push_back(back());
+                iterator back1 = finish;
+                --back1;
+                iterator back2 = back1;
+                --back2;
+                pos = start + index;
+                std::copy_backward(pos, back2, back1);
+            }
+            *pos = x_copy;
+            return pos;
         }
     }
 
