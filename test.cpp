@@ -1,8 +1,9 @@
 #include"list.h"
 #include"vector.h"
 #include"deque.h"
+#include"algorithm.h"
+
 #include<set>
-#include<algorithm>
 #include<functional>
 #include<iostream>
 #include<cstdio>
@@ -16,7 +17,7 @@ int main(){
     for (i = 0; i < 10000; i++)
         iv.push_back(ia[i % 5]);
         */
-    zzf_stl::deque<int> li;
+    zzf_stl::vector<int> li;
     li.push_back(1);
     li.push_back(2);
     li.push_back(3);
@@ -27,13 +28,11 @@ int main(){
     li.push_back(8);
     li.push_back(9);
     li.push_back(10);
-    for (int i = 0; i < 100; i++)
-        li.push_front(999);
-    /*
+    zzf_stl::vector<int> li2(li.begin(), li.end());
     auto iter1 = li.find(li.begin(), li.end(), 5);
     auto iter2 = li.find(li.begin(), li.end(), 9);
-    li.insert(iter2, 2, 999);*/
-    li.void_test_out();
+    li.erase(iter1, iter2);
+    li2.void_test_out();
     
     //uninitialized_fill_n(result, n, x);
     return 0;

@@ -2,7 +2,7 @@
 #define ZZF_DEQUE_H_
 
 #include "uninitialized.h"
-#include"alloc.h"
+#include "alloc.h"
 #include "iterator.h"//先放这儿吧
 #include "util.h"
 #include "exceptdef.h"
@@ -380,7 +380,7 @@ namespace zzf_stl
     }
 
     template <class T, class Alloc, size_t BufSiz>
-    deque<T, Alloc, BufSiz>::iterator deque<T, Alloc, BufSiz>::erase(iterator pos){
+    typename deque<T, Alloc, BufSiz>::iterator deque<T, Alloc, BufSiz>::erase(iterator pos){
         iterator next = pos;
         ++next;
         difference_type index = pos - start;
@@ -396,7 +396,7 @@ namespace zzf_stl
     }
 
     template <class T, class Alloc, size_t BufSiz>
-    deque<T, Alloc, BufSiz>::iterator deque<T, Alloc, BufSiz>::erase(iterator first, iterator last){
+    typename deque<T, Alloc, BufSiz>::iterator deque<T, Alloc, BufSiz>::erase(iterator first, iterator last){
         if (first == start && last == finish){
             clear();
             return finish;
@@ -425,7 +425,7 @@ namespace zzf_stl
     }
 
     template <class T, class Alloc, size_t BufSiz>
-    deque<T, Alloc, BufSiz>::iterator deque<T, Alloc, BufSiz>::insert(iterator pos, const T& x){
+    typename deque<T, Alloc, BufSiz>::iterator deque<T, Alloc, BufSiz>::insert(iterator pos, const T& x){
         if (pos.cur == start.cur){
             push_front(x);
             return start;

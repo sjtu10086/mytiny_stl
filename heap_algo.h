@@ -38,6 +38,11 @@ void push_heap(RandomIter first, RandomIter last)
   zzf_stl::push_heap_d(first, last, distance_type(first));
 }
 
+
+
+
+
+
 // 重载版本使用函数对象 comp 代替比较操作
 template <class RandomIter, class Distance, class T, class Compared>
 void push_heap_aux(RandomIter first, Distance holeIndex, Distance topIndex, T value,
@@ -99,6 +104,7 @@ void pop_heap_aux(RandomIter first, RandomIter last, RandomIter result, T value,
 {
   // 先将首值调至尾节点，然后调整[first, last - 1)使之重新成为一个 max-heap
   *result = *first;
+  //last - first == size - 1;
   zzf_stl::adjust_heap(first, static_cast<Distance>(0), last - first, value);
 }
 
@@ -107,6 +113,10 @@ void pop_heap(RandomIter first, RandomIter last)
 {
   zzf_stl::pop_heap_aux(first, last - 1, last - 1, *(last - 1), distance_type(first));
 }
+
+
+
+
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class RandomIter, class T, class Distance, class Compared>
@@ -197,6 +207,11 @@ void make_heap(RandomIter first, RandomIter last)
 {
   zzf_stl::make_heap_aux(first, last, distance_type(first));;
 }
+
+
+
+
+
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class RandomIter, class Distance, class Compared>

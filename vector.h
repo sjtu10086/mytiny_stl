@@ -32,6 +32,9 @@ namespace zzf_stl
             if (start)
                 data_allocator::deallocate(start, end_of_storage - start);
         }
+
+        void range_init(iterator first, iterator last);
+        void init_space(size_type size, size_type cap);
         void fill_initialize(size_type n, const T& val){
             start = alloc_and_fill(n, val);
             finish = start + n;
@@ -56,6 +59,17 @@ namespace zzf_stl
         vector(int n, const T& val) {fill_initialize(n, val);}
         vector(long n, const T& val) {fill_initialize(n, val);}
         explicit vector(size_type n) {fill_initialize(n, T());}
+        
+        vector(iterator first, iterator last)
+        {
+            debug(!(last < first));
+            range_init(first, last);
+        }
+
+        vector(const vector& rhs)
+        {
+            range_init(rhs.start, rhs.finish);
+        }
 
         ~vector(){
             destroy(start, finish);
@@ -128,6 +142,32 @@ namespace zzf_stl
         }
 
     };
+
+    template <typename T, typename Alloc>
+        void vector<T, Alloc>::range_init(iterator first, iterator last){
+            const size_type len = zzf_stl::distance(first, last);
+            const size_type init_size = std::max(len, static_cast<size_type>(16));
+            init_space(len, init_size);
+            zzf_stl::uninitialized_copy(first, last, start);
+        }
+
+    template <typename T, typename Alloc>
+        void vector<T, Alloc>::init_space(size_type size, size_type cap)
+        {
+        try
+        {
+            start = data_allocator::allocate(cap);
+            finish = start + size;
+            end_of_storage = start + cap;
+        }
+        catch (...)
+        {
+            start = nullptr;
+            finish = nullptr;
+            end_of_storage = nullptr;
+            throw;
+        }
+    }
 
     template <typename T, typename Alloc>//此处不能给alloc默认值
     void vector<T, Alloc>::insert_aux(iterator pos, const T& x){
