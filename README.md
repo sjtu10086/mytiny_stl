@@ -2,11 +2,12 @@
 
 #0130   第一级alloc配置器       
 #0131   第二级alloc配置器       
-#0201   iterator （未测试）      
-#0202   list框架、部分功能函数（未测试）    
+#0201   iterator    
+#0202   list框架、部分功能函数      
 #0203   list部分测试、部分函数          
 #0204   vector框架、部分功能函数（部分algobase部分函数未定义）  
 #0204   vector_insert、部分uninitialized函数        
-#0206   deque构造（差一点点
-#0207   deque、stack、queue
-#0211   heap_algorithm、priority_queue
+#0206   deque构造   
+#0207   deque、stack、queue     
+#0211   heap_algorithm、priority_queue （未测试）       
+#0213   rb_tree初步
